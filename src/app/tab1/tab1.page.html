@@ -1,0 +1,79 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Student Attendance</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <ion-card>
+
+    <ion-card-header>
+      <ion-card-title>Add Student</ion-card-title>
+    </ion-card-header>
+
+    <ion-card-content>
+
+      <ion-item>
+        <ion-input
+          label="Student Name"
+          labelPlacement="stacked"
+          placeholder="Enter student name"
+          [(ngModel)]="studentName">
+        </ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-input
+          label="Student ID"
+          labelPlacement="stacked"
+          placeholder="Enter student ID"
+          [(ngModel)]="studentId">
+        </ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-input
+          label="Course"
+          labelPlacement="stacked"
+          placeholder="Enter course"
+          [(ngModel)]="course">
+        </ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-select
+          label="Attendance"
+          labelPlacement="stacked"
+          [(ngModel)]="status">
+
+          <ion-select-option value="Present">
+            Present
+          </ion-select-option>
+
+          <ion-select-option value="Absent">
+            Absent
+          </ion-select-option>
+
+          <ion-select-option value="Late">
+            Late
+          </ion-select-option>
+
+        </ion-select>
+      </ion-item>
+
+      <ion-button
+        expand="block"
+        class="ion-margin-top"
+        (click)="addStudent()"
+        [disabled]="isSaving">
+
+        {{ isSaving ? 'SAVING...' : 'ADD STUDENT' }}
+
+      </ion-button>
+
+    </ion-card-content>
+
+  </ion-card>
+
+</ion-content>
