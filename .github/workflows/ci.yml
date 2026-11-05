@@ -70,7 +70,7 @@ jobs:
 
     steps:
       - name: Pull Docker Image
-        shell: pwsh
+        shell: powershell
         run: |
           docker pull ghcr.io/${{ github.repository }}:latest
           if ($LASTEXITCODE -ne 0) {
@@ -78,7 +78,7 @@ jobs:
           }
 
       - name: Stop Existing Container
-        shell: pwsh
+        shell: powershell
         run: |
           docker container inspect student-attendance-deploy *> $null
 
@@ -106,7 +106,7 @@ jobs:
           }
 
       - name: Verify Application
-        shell: pwsh
+        shell: powershell
         run: |
           $success = $false
 
