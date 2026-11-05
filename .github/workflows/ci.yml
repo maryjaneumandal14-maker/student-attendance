@@ -73,6 +73,7 @@ jobs:
         shell: powershell
         run: |
           docker pull ghcr.io/${{ github.repository }}:latest
+
           if ($LASTEXITCODE -ne 0) {
             throw "Failed to pull Docker image."
           }
@@ -80,16 +81,22 @@ jobs:
       - name: Stop Existing Container
         shell: powershell
         run: |
-          docker container inspect student-attendance-deploy *> $null
+          $existing = docker ps -aq --filter "name=^student-attendance-deploy$"
 
-          if ($LASTEXITCODE -eq 0) {
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to check existing containers."
+          }
+
+          if ($existing) {
+            Write-Host "Removing existing deployment container..."
+
             docker rm -f student-attendance-deploy
 
             if ($LASTEXITCODE -ne 0) {
               throw "Failed to remove existing container."
             }
           } else {
-            Write-Host "No existing deployment container."
+            Write-Host "No existing deployment container. Proceeding with first deployment."
           }
 
       - name: Deploy Docker Container
