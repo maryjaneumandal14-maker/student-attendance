@@ -14,8 +14,8 @@ permissions:
   packages: write
 
 jobs:
-  build-and-publish:
-    name: Build, Test and Publish Docker Image
+  continuous-integration:
+    name: Continuous Integration
     runs-on: ubuntu-latest
 
     steps:
@@ -54,10 +54,84 @@ jobs:
             type=raw,value=latest
             type=sha
 
-      - name: Build and Push Docker Image
+      - name: Build and Publish Docker Image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: ${{ github.event_name == 'push' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  continuous-deployment:
+    name: Continuous Deployment
+    runs-on: [self-hosted, Windows, X64]
+    needs: continuous-integration
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Pull Docker Image
+        shell: pwsh
+        run: |
+          docker pull ghcr.io/${{ github.repository }}:latest
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to pull Docker image."
+          }
+
+      - name: Stop Existing Container
+        shell: pwsh
+        run: |
+          docker container inspect student-attendance-deploy *> $null
+
+          if ($LASTEXITCODE -eq 0) {
+            docker rm -f student-attendance-deploy
+
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to remove existing container."
+            }
+          } else {
+            Write-Host "No existing deployment container."
+          }
+
+      - name: Deploy Docker Container
+        shell: pwsh
+        run: |
+          docker run -d `
+            --name student-attendance-deploy `
+            --restart unless-stopped `
+            -p 8103:8100 `
+            ghcr.io/${{ github.repository }}:latest
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Docker deployment failed."
+          }
+
+      - name: Verify Application
+        shell: pwsh
+        run: |
+          $success = $false
+
+          for ($i = 1; $i -le 12; $i++) {
+            try {
+              $response = Invoke-WebRequest `
+                -Uri "http://localhost:8103" `
+                -UseBasicParsing `
+                -TimeoutSec 10
+
+              if ($response.StatusCode -eq 200) {
+                $success = $true
+                break
+              }
+            }
+            catch {
+              Write-Host "Waiting for application... Attempt $i"
+              Start-Sleep -Seconds 5
+            }
+          }
+
+          if (-not $success) {
+            docker logs student-attendance-deploy
+            throw "Application verification failed."
+          }
+
+          Write-Host "Student Attendance successfully deployed!"
+          Write-Host "Application URL: http://localhost:8103"
