@@ -1,9 +1,8 @@
 
-FROM node:24-alpine
+# Stage 1: Build Angular Application
+FROM node:24-alpine AS build
 
 WORKDIR /app
-
-RUN npm install -g @ionic/cli
 
 COPY package*.json ./
 
@@ -11,6 +10,16 @@ RUN npm ci
 
 COPY . .
 
+RUN npm run build -- --configuration production
+
+# Stage 2: Run Production Application
+FROM nginx:alpine
+
+COPY --from=build /app/www/ /usr/share/nginx/html/
+
+# Configure Nginx to listen on port 8100
+RUN sed -i 's/listen       80;/listen       8100;/' /etc/nginx/conf.d/default.conf
+
 EXPOSE 8100
 
-CMD ["ionic", "serve", "--host=0.0.0.0", "--port=8100", "--no-open"]
+CMD ["nginx", "-g", "daemon off;"]
